@@ -38,6 +38,17 @@ def NewtonRaphson(f, Df, p0, max_iter = 1000, tol = 1e-9):
 			break
 		p = pk
 	return pk, k + 1
+	
+# Solver for systems of nonlinear equations
+def VariableSecantScheme(f, p0, p1, max_iter = 1000, tol = 1e-9):
+	for k in range(max_iter):
+		q = (p1 - p0) / (f(p1) - f(p0))
+		p0 = p1 
+		p1 = p1 - q * f(p1)
+		err = np.linalg.norm(p1 - p0) / np.linalg.norm(p1)
+		if err < tol:
+			break
+	return p1, k + 1
 
 # Backward Euler solver for systems of 1st order ODE
 def BackwardEuler(f, Df, y0, N, T, *argv):
@@ -58,7 +69,8 @@ def BackwardEuler(f, Df, y0, N, T, *argv):
 		return 1 - h * Df(y_, time[i+1], *argv)
 	
 	while i < len(time[:-1]):
-		y[i+1], iter = NewtonRaphson(f_, Df_, y[i])
+		# y[i+1], iter = NewtonRaphson(f_, Df_, y[i])
+		y[i+1], iter = VariableSecantScheme(f_, y[i] - 1.e3, y[i] + 1.e3)
 		nonlinear_iterations[i] = iter 
 		i += 1
 	return { 'solution': y, 'time_steps': time.shape[0], 'avg_nonlinear_iter': np.mean(nonlinear_iterations), 'no_nonlinear_convergence': np.sum(nonlinear_iterations == 1000) }
@@ -82,7 +94,8 @@ def CrankNicolson(f, Df, y0, N, T, *argv):
 		return 1 - 0.5 * h * (Df(y_, time[i+1], *argv) + Df(y[i], time[i], *argv))
 	
 	while i < len(time[:-1]):
-		y[i+1], iter = NewtonRaphson(f_, Df_, y[i])
+		# y[i+1], iter = NewtonRaphson(f_, Df_, y[i])
+		y[i+1], iter = VariableSecantScheme(f_, y[i] - 1.e3, y[i] + 1.e3)
 		nonlinear_iterations[i] = iter 
 		i += 1
 	return { 'solution': y, 'time_steps': time.shape[0], 'avg_nonlinear_iter': np.mean(nonlinear_iterations), 'no_nonlinear_convergence': np.sum(nonlinear_iterations == 1000) }
