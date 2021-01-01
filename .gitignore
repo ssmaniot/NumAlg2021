@@ -1,2 +1,3 @@
 *.pdf
+!report.pdf
 *.tex
