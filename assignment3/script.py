@@ -266,6 +266,34 @@ if __name__ == '__main__':
 		
 		return np.array([d2sdt2, d2edt2, d2idt2, d2adt2, d2rdt2, d2ddt2])
 	
+	# Jacobian of seiard model...
+	def dseiard_(z, t, alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np):
+		S, E, I, A, R, D = z 
+		J = np.zeros((6, 6)).astype(np.float64)
+		# S 
+		J[0,0] = -beta0 * (I + betaA * A) / (Np - D)
+		J[0,2] = -beta0 * S / (Np - D)
+		J[0,3] = -beta0 * betaA * A * S / (Np - D)
+		J[0,5] = -beta0 * (I + betaA * A) * S / (Np - D) ** 2
+		# E 
+		J[1,0] = beta0 * (I + betaA * A) / (Np - D)
+		J[1,1] = -delta 
+		J[1,3] = beta0 * betaA * A * S / (Np - D)
+		J[1,5] = beta0 * (I + betaA * A) * S / (Np - D) ** 2
+		# I 
+		J[2,1] = sigma * delta 
+		J[2,2] = -gammaI -alpha 
+		# A 
+		J[3,1] = (1 - sigma) * delta 
+		J[3,3] = gammaA 
+		# R 
+		J[4,2] = gammaI 
+		J[4,3] = gammaA 
+		# D 
+		J[5,2] = alpha 
+		
+		return J
+	
 	# Parameters of the CP problem
 	alpha = 1./21.
 	beta0 = 2.
