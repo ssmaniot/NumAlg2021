@@ -27,6 +27,7 @@ def ForwardEuler(f, y0, N, T, *argv):
 	return { 'solution': y, 'time_steps': time.shape[0] }
 
 # Solver for systems of nonlinear equations
+# NO LONGER IN USE
 def NewtonRaphson(f, Df, p0, max_iter = 1000, tol = 1e-9):
 	if type(p0) is not np.ndarray:
 		p0 = np.array([p0])
@@ -51,7 +52,7 @@ def VariableSecantScheme(f, p0, p1, max_iter = 1000, tol = 1e-9):
 	return p1, k + 1
 
 # Backward Euler solver for systems of 1st order ODE
-def BackwardEuler(f, Df, y0, N, T, *argv):
+def BackwardEuler(f, y0, N, T, *argv):
 	print('BackwardEuler(N={}, T={})'.format(N, T))
 	if type(y0) is not np.ndarray:
 		y0 = np.array([y0])
@@ -65,9 +66,6 @@ def BackwardEuler(f, Df, y0, N, T, *argv):
 	def f_(y_):
 		return y_ - y[i] - h * f(y_, time[i+1], *argv)
 	
-	def Df_(y_):
-		return 1 - h * Df(y_, time[i+1], *argv)
-	
 	while i < len(time[:-1]):
 		# y[i+1], iter = NewtonRaphson(f_, Df_, y[i])
 		y[i+1], iter = VariableSecantScheme(f_, y[i] - 1.e3, y[i] + 1.e3)
@@ -76,7 +74,7 @@ def BackwardEuler(f, Df, y0, N, T, *argv):
 	return { 'solution': y, 'time_steps': time.shape[0], 'avg_nonlinear_iter': np.mean(nonlinear_iterations), 'no_nonlinear_convergence': np.sum(nonlinear_iterations == 1000) }
 
 # Crank-Nicolson solver for systems of 1st order ODE
-def CrankNicolson(f, Df, y0, N, T, *argv):
+def CrankNicolson(f, y0, N, T, *argv):
 	print('CrankNicolson(N={}, T={})'.format(N, T))
 	if type(y0) is not np.ndarray:
 		y0 = np.array([y0])
@@ -89,9 +87,6 @@ def CrankNicolson(f, Df, y0, N, T, *argv):
 	
 	def f_(y_):
 		return y_ - y[i] - 0.5 * h * (f(y_, time[i+1], *argv) + f(y[i], time[i], *argv))
-	
-	def Df_(y_):
-		return 1 - 0.5 * h * (Df(y_, time[i+1], *argv) + Df(y[i], time[i], *argv))
 	
 	while i < len(time[:-1]):
 		# y[i+1], iter = NewtonRaphson(f_, Df_, y[i])
@@ -125,14 +120,6 @@ if __name__ == '__main__':
 		dvdt = -k/m * y 
 		return np.array([dydt, dvdt])
 	
-	# First derivative of spring model 
-	def dspring(z, t, k, m):
-		y = z[0]
-		v = z[1]
-		d2ydt2 = (-k / m) * y
-		d2vdt2 = (-k / m) * v
-		return np.array([d2ydt2, d2vdt2])
-	
 	# Parameters of the CP problem
 	z0 = np.array([0.1, 0.])
 	k = 1.
@@ -162,14 +149,14 @@ if __name__ == '__main__':
 		
 		# Backward Euler
 		begin = process_time()
-		be = BackwardEuler(spring, dspring, z0, n, T, k, m)
+		be = BackwardEuler(spring, z0, n, T, k, m)
 		end = process_time()
 		print_execution_info(be, end - begin, implicit = True)
 		zbe = be['solution']
 		
 		# Crank-Nicolson 
 		begin = process_time()
-		cn = CrankNicolson(spring, dspring, z0, n, T, k, m)
+		cn = CrankNicolson(spring, z0, n, T, k, m)
 		end = process_time()
 		print_execution_info(cn, end - begin, implicit = True)
 		zcn = cn['solution']
@@ -250,62 +237,13 @@ if __name__ == '__main__':
 	# Function of SEIARD model 
 	def seiard(z, t, alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np):
 		S, E, I, A, R, D = z  
-		return np.array([
-			dSdt(beta0, betaA, A, D, I, S, Np), 
-			dEdt(beta0, betaA, delta, A, D, E, I, S),
-			dIdt(alpha, gammaI, delta, sigma, E, I), 
-			dAdt(gammaA, delta, sigma, A, E), 
-			dRdt(gammaA, gammaI, A, I), 
-			dDdt(alpha, I)])
-	
-	# First derivative of SEIARD model 
-	def dseiard(z, t, alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np):
-		S, E, I, A, R, D = z 
-		dsdt = dSdt(beta0, betaA, A, D, I, S, Np)
-		dedt = dEdt(beta0, betaA, delta, A, D, E, I, S)
-		didt = dIdt(alpha, gammaI, delta, sigma, E, I)
-		dadt = dAdt(gammaA, delta, sigma, A, E)
-		drdt = dRdt(gammaA, gammaI, A, I)
-		dddt = dDdt(alpha, I)
-		
-		dsdt, dedt, didt, dadt, drdt, dddt = seiard(z, t, alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np)
-		
-		d2sdt2 = -beta0 * (S * (didt + betaA * dadt) * (Np - D) + (I + betaA * A) * (dsdt * (Np - D) + S * dddt)) / (Np - D) ** 2
-		d2edt2 = -d2sdt2 - delta * dedt 
-		d2idt2 = sigma * delta * dedt - gammaI * didt - alpha * didt 
-		d2adt2 = (1. - sigma) * delta * dedt - gammaA * dadt 
-		d2rdt2 = gammaI * didt + gammaA * dadt 
-		d2ddt2 = alpha * didt 
-		
-		return np.array([d2sdt2, d2edt2, d2idt2, d2adt2, d2rdt2, d2ddt2])
-	
-	# Jacobian of seiard model...
-	def dseiard_(z, t, alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np):
-		S, E, I, A, R, D = z 
-		J = np.zeros((6, 6)).astype(np.float64)
-		# S 
-		J[0,0] = -beta0 * (I + betaA * A) / (Np - D)
-		J[0,2] = -beta0 * S / (Np - D)
-		J[0,3] = -beta0 * betaA * A * S / (Np - D)
-		J[0,5] = -beta0 * (I + betaA * A) * S / (Np - D) ** 2
-		# E 
-		J[1,0] = beta0 * (I + betaA * A) / (Np - D)
-		J[1,1] = -delta 
-		J[1,3] = beta0 * betaA * A * S / (Np - D)
-		J[1,5] = beta0 * (I + betaA * A) * S / (Np - D) ** 2
-		# I 
-		J[2,1] = sigma * delta 
-		J[2,2] = -gammaI -alpha 
-		# A 
-		J[3,1] = (1 - sigma) * delta 
-		J[3,3] = gammaA 
-		# R 
-		J[4,2] = gammaI 
-		J[4,3] = gammaA 
-		# D 
-		J[5,2] = alpha 
-		
-		return J
+		dsdt = -beta0 * (I + betaA * A) * S / (Np - D)
+		dedt = -dsdt - delta * E 
+		didt = sigma * delta * E - gammaI * I - alpha * I 
+		dadt = (1. - sigma) * delta * E - gammaA * A 
+		drdt = gammaI * I + gammaA * A
+		dddt = alpha * I
+		return np.array([dsdt, dedt, didt, dadt, drdt, dddt])
 	
 	# Parameters of the CP problem
 	alpha = 1./21.
@@ -326,7 +264,7 @@ if __name__ == '__main__':
 	
 	# MEANING:    [S        E   I   A   R   D ]
 	z0 = np.array([Np - 1., 1., 0., 0., 0., 0.])
-	n = 4
+	n = 0
 	T = 100 
 	h = 2. ** (-n)
 	time = np.arange(0., T, step=h)
@@ -334,13 +272,13 @@ if __name__ == '__main__':
 	# Crank-Nicolson 
 	begin = process_time()
 	# cn = ForwardEuler(seiard, z0, n, T, alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np)
-	cn = CrankNicolson(seiard, dseiard, z0, n, T, alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np)
+	cn = CrankNicolson(seiard, z0, n, T, alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np)
 	# cn = odeint(seiard, z0, time, args=(alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np))
 	end = process_time()
-	print_execution_info(cn, end - begin, implicit = False)
+	print_execution_info(cn, end - begin, implicit = True)
 	zcn = cn['solution']
 	
-	# zcn = odeint(seiard, z0, time, args=(alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np))
+	zoi = odeint(seiard, z0, time, args=(alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np))
 	
 	fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(20, 30))
 	fig.suptitle('Crank-Nicolson Approximation of Covid-19 Spread using SEIARD Model', fontsize=30)
