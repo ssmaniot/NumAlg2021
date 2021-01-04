@@ -127,8 +127,9 @@ if __name__ == '__main__':
 	T = 15
 	N = 8
 	
-	# Allocating array for error 
+	# Allocating array for error and elapsed time 
 	err = np.ones((N, 4))
+	elapsed_time = np.empty((N, 4))
 	
 	fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 10))
 	fig.suptitle('Comparison Between Numerical and Analytical Solutions', fontsize=30)
@@ -145,6 +146,7 @@ if __name__ == '__main__':
 		fe = ForwardEuler(spring, z0, n, T, k, m)
 		end = process_time()
 		print_execution_info(fe, end - begin, implicit = False)
+		elapsed_time[n-1,0] = end - begin
 		zfe = fe['solution']
 		
 		# Backward Euler
@@ -152,6 +154,7 @@ if __name__ == '__main__':
 		be = BackwardEuler(spring, z0, n, T, k, m)
 		end = process_time()
 		print_execution_info(be, end - begin, implicit = True)
+		elapsed_time[n-1,1] = end - begin
 		zbe = be['solution']
 		
 		# Crank-Nicolson 
@@ -159,6 +162,7 @@ if __name__ == '__main__':
 		cn = CrankNicolson(spring, z0, n, T, k, m)
 		end = process_time()
 		print_execution_info(cn, end - begin, implicit = True)
+		elapsed_time[n-1,2] = end - begin
 		zcn = cn['solution']
 		
 		# scipy.integrate.odeint()
@@ -166,6 +170,7 @@ if __name__ == '__main__':
 		begin = process_time()
 		zoi = odeint(spring, z0, time, args=(k, m))
 		end = process_time()
+		elapsed_time[n-1,3] = end - begin
 		print('- Elapsed CPU time:                       {}'.format(end - begin))
 		print('\n')
 		
@@ -211,28 +216,14 @@ if __name__ == '__main__':
 	plt.savefig('error.pdf')
 	plt.clf()
 	
+	print('   CPU TIME ELAPSED\n')
+	df = pd.DataFrame(data = elapsed_time, columns= models)
+	print(df)
+	print('\n')
+	
 	"""
 	PART 2: EPIDEMIOLOGICAL MODEL (OPTIONAL)
 	"""
-
-	# Derivatives of components of SEIARD model 
-	def dSdt(beta0, betaA, A, D, I, S, Np):
-		return - beta0 * (I + betaA * A) * S / (Np - D)
-	
-	def dEdt(beta0, betaA, delta, A, D, E, I, S):
-		return - dSdt(beta0, betaA, A, D, I, S, Np) - delta * E 
-	
-	def dIdt(alpha, gammaI, delta, sigma, E, I):
-		return sigma * delta * E - gammaI * I - alpha * I 
-	
-	def dAdt(gammaA, delta, sigma, A, E):
-		return (1. - sigma) * delta * E - gammaA * A 
-	
-	def dRdt(gammaA, gammaI, A, I):
-		return gammaI * I + gammaA * A 
-	
-	def dDdt(alpha, I):
-		return alpha * I
 
 	# Function of SEIARD model 
 	def seiard(z, t, alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np):
@@ -264,39 +255,97 @@ if __name__ == '__main__':
 	
 	# MEANING:    [S        E   I   A   R   D ]
 	z0 = np.array([Np - 1., 1., 0., 0., 0., 0.])
-	n = 0
+	N = 4
 	T = 100 
 	h = 2. ** (-n)
 	time = np.arange(0., T, step=h)
 	
-	# Crank-Nicolson 
-	begin = process_time()
-	# cn = ForwardEuler(seiard, z0, n, T, alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np)
-	cn = CrankNicolson(seiard, z0, n, T, alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np)
-	# cn = odeint(seiard, z0, time, args=(alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np))
-	end = process_time()
-	print_execution_info(cn, end - begin, implicit = True)
-	zcn = cn['solution']
+	# Allocating array for error and elapsed time 
+	err = np.ones((N, 3))
+	elapsed_time = np.empty((N, 4))
 	
-	zoi = odeint(seiard, z0, time, args=(alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np))
+	fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 10))
+	fig.suptitle('Comparison Between Numerical and Analytical Solutions', fontsize=30)
+	for n in range(0, N + 1):
+		print('---')
+		h = 2. ** (-n)
+		time = np.arange(0., T, step=h)
+		
+		# Solving using numerical schemes
+		
+		# Forward Euler 
+		begin = process_time()
+		fe = ForwardEuler(seiard, z0, n, T, alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np)
+		end = process_time()
+		print_execution_info(fe, end - begin, implicit = False)
+		elapsed_time[n-1,0] = end - begin
+		zfe = fe['solution']
+		
+		# Backward Euler
+		begin = process_time()
+		be = BackwardEuler(seiard, z0, n, T, alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np)
+		end = process_time()
+		print_execution_info(be, end - begin, implicit = True)
+		elapsed_time[n-1,1] = end - begin
+		zbe = be['solution']
+		
+		# Crank-Nicolson 
+		begin = process_time()
+		cn = CrankNicolson(seiard, z0, n, T, alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np)
+		end = process_time()
+		print_execution_info(cn, end - begin, implicit = True)
+		elapsed_time[n-1,2] = end - begin
+		zcn = cn['solution']
+		
+		# scipy.integrate.odeint()
+		print('scipy.integrate.odeint()')
+		begin = process_time()
+		zoi = odeint(seiard, z0, time, args=(alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np))
+		end = process_time()
+		elapsed_time[n-1,3] = end - begin
+		print('- Elapsed CPU time:                       {}'.format(end - begin))
+		print('\n')
+		
+		# Error computation
+		err[n-1,:] = np.min(np.abs(zfe[1:] - zoi[1:])), np.min(np.abs(zbe[1:] - zoi[1:])), np.min(np.abs(zcn[1:] - zoi[1:]))
+		
+		# Plotting results for N=0
+		fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(20, 30))
+		fig.suptitle('Crank-Nicolson Approximation of Covid-19 Spread using SEIARD Model', fontsize=30)
+		titles = ['Susceptible', 'Exposed', 'Symptomatic Infected', 'Asymptomatic Infected', 'Recovered', 'Dead']
+		ylabs = [r'$S(t)$', r'$E(t)$', r'$I(t)$', r'$A(t)$', r'$R(t)$', r'$D(t)$']
+		for i in range(6):
+			idx = i//2, i%2 
+			ax = axes[idx]
+			ax.plot(time, zfe[:,i], '-', label = 'Forward Euler')
+			ax.plot(time, zbe[:,i], '--', label = 'Backward Euler')
+			ax.plot(time, zcn[:,i], '-.', label = 'Crank-Nicolson')
+			ax.plot(time, zoi[:,i], ':', label = 'scipy.integrate.odeint()')
+			ax.set_xlabel('time', fontsize=18)
+			ax.set_ylabel(ylabs[i], fontsize=18)
+			ax.set_title(titles[i], fontsize=18)
+			ax.legend()
 	
-	fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(20, 30))
-	fig.suptitle('Crank-Nicolson Approximation of Covid-19 Spread using SEIARD Model', fontsize=30)
+	plt.savefig('numerical_analytical_comp_seiard.pdf')
+	plt.clf()
 	
-	titles = ['Susceptible', 'Exposed', 'Symptomatic Infected', 'Asymptomatic Infected', 'Recovered', 'Dead']
-	ylabs = [r'$S(t)$', r'$E(t)$', r'$I(t)$', r'$A(t)$', r'$R(t)$', r'$D(t)$']
+	models = ['Forward Euler', 'Backward Euler', 'Crank-Nicolson', 'scipy.integrate.odeint()']
 	
-	for i in range(6):
-		idx = i//2, i%2 
-		ax = axes[idx]
-		ax.plot(time, zcn[:,i], label = 'Crank-Nicolson')
-		# ax.plot(time[:int(y.shape[0]/h)], zcn[:int(y.shape[0]/h),i], label = 'Crank-Nicolson')
-		# if i < 5:
-			# ax.plot(np.arange(0, y.shape[0]), y, 'r--o', label = 'Infected people')
-		# ax.set_ylim(0., np.max(y) + 10.)
-		ax.set_xlabel('time', fontsize=18)
-		ax.set_ylabel(ylabs[i], fontsize=18)
-		ax.set_title(titles[i], fontsize=18)
+	# Plotting the convergence of error and error ratio
+	fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 10))
+	fig.suptitle('Convergence of error', fontsize=30)
 	
-	plt.savefig('seiard.pdf')
+	axes[0].plot(np.arange(1, N + 1), err, ':o')
+	axes[0].set_xlabel(r'$N$', fontsize=18)
+	axes[0].set_ylabel(r'$e^{(N)}$', fontsize=18)
+	axes[0].set_title(r'Absolute Error', fontsize=18)
+	axes[0].legend(models)
+	
+	axes[1].plot(np.arange(2, N + 1), err[1:] / err[:-1], ':o')
+	axes[1].set_xlabel(r'$N$', fontsize=18)
+	axes[1].set_ylabel(r'$e^{(N)}/e^{(N-1)}$', fontsize=18)
+	axes[1].set_title(r'Error Ratio', fontsize=18)
+	axes[1].legend(models)
+	
+	plt.savefig('error_seiard.pdf')
 	plt.clf()
