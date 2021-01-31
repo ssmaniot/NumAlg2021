@@ -104,6 +104,7 @@ A = A + A.T
 d = np.abs(A.sum()) + 1
 A = A + sps.diags(d * np.ones(n))
 b = np.ones(n)
+np.random.seed(1)
 x0 = np.random.rand(n)
 
 x, k, t = Jacobi(A, x0, b)
