@@ -8,11 +8,12 @@ def Jacobi(A, x0, b, tol = 1.e-10, max_iter = 200):
 	start = time()
 	n = A.shape[0]
 	x = x0
-	k = 0
 	d = 1 / A.diagonal()
 	DA = A.copy()
 	DA.setdiag(0.)
-	while np.linalg.norm(A.dot(x) - b) > tol and k < max_iter:
+	bnorm = np.linalg.norm(b)
+	k = 0
+	while np.linalg.norm(A.dot(x) - b) / bnorm > tol and k < max_iter:
 		x = d * (b - DA.dot(x))
 		k += 1
 	return x, k, time() - start
@@ -22,8 +23,9 @@ def GaussSeidel(A, x0, b, tol = 1.e-10, max_iter = 200):
 	n = A.shape[0]
 	x = x0 
 	MD, N = sps.tril(A, format = 'csr'), sps.triu(A, k = 1, format = 'csr')
+	bnorm = np.linalg.norm(b)
 	k = 0
-	while np.linalg.norm(A.dot(x) - b) > tol and k < max_iter:
+	while np.linalg.norm(A.dot(x) - b) / bnorm > tol and k < max_iter:
 		x = spsolve_triangular(MD, b - N.dot(x)) 
 		k += 1 
 	return x, k, time() - start
@@ -34,8 +36,9 @@ def GaussSeidelCC(A, x0, b, tol = 1.e-10, max_iter = 200):
 	x = x0 
 	d = A.diagonal()
 	M, N = sps.tril(A, k = -1, format = 'csr'), sps.triu(A, k = 1, format = 'csr')
+	bnorm = np.linalg.norm(b)
 	k = 0
-	while np.linalg.norm(A.dot(x) - b) > tol and k < max_iter:
+	while np.linalg.norm(A.dot(x) - b) / bnorm > tol and k < max_iter:
 		v = N.dot(x)
 		xk = np.zeros(n)
 		for i in range(n):
@@ -77,10 +80,9 @@ def ConjugateGradient(A, x0, b, tol = 1.e-10, max_iter = 200):
 		k += 1
 	return x, k, time() - start
 
-def PreconditionedConjugateGradient(A, x0, b, tol = 1.e-10, max_iter = 200):
+def PreconditionedConjugateGradient(A, x0, b, P, tol = 1.e-10, max_iter = 200):
 	start = time()
 	n = A.shape[0]
-	P = sps.csr_matrix((A.diagonal(), (np.arange(n), np.arange(n))))
 	r = b - A.dot(x0) 
 	p = r 
 	x = x0 
@@ -130,7 +132,8 @@ x, k, t = ConjugateGradient(A, x0, b)
 print('iter', k)
 print('time', t)
 print('CG  ', np.linalg.norm(A.dot(x) - b))
-x, k, t = PreconditionedConjugateGradient(A, x0, b)
+P = sps.csr_matrix((A.diagonal(), (np.arange(n), np.arange(n))))
+x, k, t = PreconditionedConjugateGradient(A, x0, b, P)
 print('iter', k)
 print('time', t)
 print('PCG ', np.linalg.norm(A.dot(x) - b))
