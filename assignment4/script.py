@@ -49,8 +49,9 @@ def SteepestDescent(A, x0, b, tol = 1.e-10, max_iter = 200):
 	start = time()
 	r = b - A.dot(x0)
 	x = x0 
+	bnorm = np.linalg.norm(b)
 	k = 0
-	while np.linalg.norm(r) > tol and k < max_iter:
+	while np.linalg.norm(r) / bnorm > tol and k < max_iter:
 		Ar = A.dot(r)
 		alpha = (r @ r) / (r @ Ar)
 		x = x + alpha * r 
@@ -63,8 +64,9 @@ def ConjugateGradient(A, x0, b, tol = 1.e-10, max_iter = 200):
 	r = b - A.dot(x0)
 	p = r 
 	x = x0 
+	bnorm = np.linalg.norm(b)
 	k = 0
-	while np.linalg.norm(r) > tol and k < max_iter:
+	while np.linalg.norm(r) / bnorm > tol and k < max_iter:
 		Ap = A.dot(p) 
 		pAp = p @ Ap 
 		alpha = (p @ r) / pAp 
@@ -82,8 +84,9 @@ def PreconditionedConjugateGradient(A, x0, b, tol = 1.e-10, max_iter = 200):
 	r = b - A.dot(x0) 
 	p = r 
 	x = x0 
+	bnorm = np.linalg.norm(b)
 	k = 0
-	while np.linalg.norm(r) / np.linalg.norm(b) > tol and k < max_iter:
+	while np.linalg.norm(r) / bnorm > tol and k < max_iter:
 		Ap = A.dot(p)
 		pAp = p @ Ap
 		alpha = (p @ r) / pAp 
@@ -139,11 +142,3 @@ print('PCG ', np.linalg.norm(A.dot(x) - b))
 # A = 0.5 * (A + A.T) + n * D 
 # b = np.ones(n)
 # x0 = np.random.rand(n) * np.array(np.random.rand(n) < 0.5) 
-
-# exit()
-
-# A = sps.csr_matrix(([3, -1, 1, 2], ([0, 0, 1, 2], [0, 2, 1, 2])))
-# b = np.array([1., 1., 1.])
-# x0 = np.array([-1., 3., 2.])
-# x = PreconditionedConjugateGradient(A, x0, b)
-# print(A.dot(x) - b)
