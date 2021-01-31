@@ -100,14 +100,17 @@ def PreconditionedConjugateGradient(A, x0, b, P, tol = 1.e-10, max_iter = 200):
 		k += 1
 	return x, k, time() - start
 
-i = loadmat('savei.mat')['i'][:,0] - 1
-j = loadmat('savej.mat')['j'][:,0] - 1
-n = max(np.max(i), np.max(j)) + 1
-print('Matrix of size', n)
-A = sps.csr_matrix((-np.ones(i.shape[0]), (i, j)), (n, n), dtype = np.float)
-A = A + A.T 
-d = np.abs(A.sum()) + 1
-A = A + sps.diags(d * np.ones(n))
+# i = loadmat('savei.mat')['i'][:,0] - 1
+# j = loadmat('savej.mat')['j'][:,0] - 1
+# n = max(np.max(i), np.max(j)) + 1
+# print('Matrix of size', n)
+# A = sps.csr_matrix((-np.ones(i.shape[0]), (i, j)), (n, n), dtype = np.float)
+# A = A + A.T 
+# d = np.abs(A.sum()) + 1
+# A = A + sps.diags(d * np.ones(n))
+A = sps.load_npz('A.npz')
+P = sps.load_npz('P.npz')
+n = A.shape[0]
 b = np.ones(n)
 np.random.seed(1)
 x0 = np.random.rand(n)
