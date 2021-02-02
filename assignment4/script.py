@@ -224,7 +224,7 @@ if __name__ == '__main__':
 	print('PCGd {:.2e} ± {:.2e}'.format(m, sd))
 	m, sd = avg_time_elapsed(standard_solver, 10, A, x0, b)
 	print('SS   {:.2e} ± {:.2e}'.format(m, sd))
-	#hi
+	
 	# Part 3: Dense Matrix
 	print('\nDense')
 	A = A.todense().A 
