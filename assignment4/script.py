@@ -126,7 +126,9 @@ def PreconditionedConjugateGradient(A, x0, b, P, tol = 1.e-10, max_iter = 200):
 
 if __name__ == '__main__':
 
-	A = sps.load_npz('A.npz')
+	# A = sps.load_npz('A.npz')
+	Ad = loadmat('Adense.mat')['Ad']
+	A = sps.csr_matrix(Ad)
 	P = sps.load_npz('P.npz')
 	n = A.shape[0]
 	b = np.ones(n)

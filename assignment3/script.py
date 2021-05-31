@@ -189,7 +189,7 @@ if __name__ == '__main__':
 		zan = z0[0] * np.cos(np.sqrt(k / m) * time)
 		
 		# Error computation
-		err[n-1,:] = np.min(np.abs(zfe[1:,0] - zan[1:])), np.min(np.abs(zbe[1:,0] - zan[1:])), np.min(np.abs(zcn[1:,0] - zan[1:])), np.min(np.abs(zoi[1:,0] - zan[1:]))
+		err[n-1,:] = np.max(np.abs(zfe[1:,0] - zan[1:])), np.max(np.abs(zbe[1:,0] - zan[1:])), np.max(np.abs(zcn[1:,0] - zan[1:])), np.max(np.abs(zoi[1:,0] - zan[1:]))
 		
 		# Plotting results for N=1 and N=8
 		if n == 1 or n == 8:
@@ -283,7 +283,7 @@ if __name__ == '__main__':
 		zan = z0[0] * np.cos(np.sqrt(k / m) * time)
 		
 		# Error computation
-		err[n-1,:] = np.min(np.abs(zfe[1:,0] - zan[1:])), np.min(np.abs(zbe[1:,0] - zan[1:])), np.min(np.abs(zcn[1:,0] - zan[1:])), np.min(np.abs(zoi[1:,0] - zan[1:]))
+		err[n-1,:] = np.max(np.abs(zfe[1:,0] - zan[1:])), np.max(np.abs(zbe[1:,0] - zan[1:])), np.max(np.abs(zcn[1:,0] - zan[1:])), np.max(np.abs(zoi[1:,0] - zan[1:]))
 	
 	# Plotting the convergence of error and error ratio for tol = 1.e-3
 	fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 10))
@@ -402,7 +402,7 @@ if __name__ == '__main__':
 		# print('\n')
 		
 		# Error computation
-		err[n,:] = np.min(np.abs(zfe[1:] - zoi[1:])), np.min(np.abs(zbe[1:] - zoi[1:])), np.min(np.abs(zcn[1:] - zoi[1:]))
+		err[n,:] = np.max(np.abs(zfe[1:] - zoi[1:])), np.max(np.abs(zbe[1:] - zoi[1:])), np.max(np.abs(zcn[1:] - zoi[1:]))
 		
 		# Plotting results for N=0
 		fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(20, 30))
@@ -501,7 +501,7 @@ if __name__ == '__main__':
 		zoi = odeint(seiard, z0, time, args=(alpha, beta0, betaA, gammaA, gammaI, delta, sigma, Np))
 		
 		# Error computation
-		err[n,:] = np.min(np.abs(zfe[1:] - zoi[1:])), np.min(np.abs(zbe[1:] - zoi[1:])), np.min(np.abs(zcn[1:] - zoi[1:]))
+		err[n,:] = np.max(np.abs(zfe[1:] - zoi[1:])), np.max(np.abs(zbe[1:] - zoi[1:])), np.max(np.abs(zcn[1:] - zoi[1:]))
 	
 	# Plotting the convergence of error and error ratio for tol = 1.e-3
 	fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 10))
